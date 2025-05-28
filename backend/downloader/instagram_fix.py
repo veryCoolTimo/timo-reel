@@ -75,25 +75,84 @@ def get_fallback_options() -> List[Dict[str, any]]:
     
     fallback_configs = []
     
-    # Конфиг 1: Минимальное качество
+    # Конфиг 1: Минимальное качество с мобильным UA
     config1 = get_instagram_options()
     config1.update({
         'format': 'worst',
-        'socket_timeout': 60,
-        'retries': 5,
+        'socket_timeout': 120,
+        'retries': 10,
+        'sleep_interval': random.uniform(8, 15),
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.1 Mobile/15E148 Safari/604.1',
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
     })
     fallback_configs.append(config1)
     
-    # Конфиг 2: Другой User-Agent
+    # Конфиг 2: Старый Android браузер
     config2 = get_instagram_options()
-    config2['http_headers']['User-Agent'] = random.choice(USER_AGENTS)
+    config2.update({
+        'format': 'worst[height<=480]',
+        'socket_timeout': 150,
+        'retries': 15,
+        'sleep_interval': random.uniform(10, 20),
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip',
+            'Connection': 'keep-alive',
+        }
+    })
     fallback_configs.append(config2)
     
-    # Конфиг 3: Без прокси
+    # Конфиг 3: Desktop Firefox с прокси эмуляцией
     config3 = get_instagram_options()
-    if 'proxy' in config3:
-        del config3['proxy']
+    config3.update({
+        'format': 'worst',
+        'socket_timeout': 180,
+        'retries': 20,
+        'sleep_interval': random.uniform(15, 25),
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Via': '1.1 proxy.example.com:8080',
+            'X-Forwarded-For': f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}",
+        }
+    })
     fallback_configs.append(config3)
+    
+    # Конфиг 4: Старый Safari (максимальная совместимость)
+    config4 = get_instagram_options()
+    config4.update({
+        'format': 'worst[filesize<10M]',
+        'socket_timeout': 200,
+        'retries': 25,
+        'sleep_interval': random.uniform(20, 30),
+        'http_headers': {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-us',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+        },
+        'prefer_insecure': True,
+        'no_check_certificate': True,
+    })
+    fallback_configs.append(config4)
     
     return fallback_configs
 
@@ -129,17 +188,43 @@ def get_server_specific_config() -> Dict[str, any]:
         
         # Более агрессивные настройки для серверов
         config.update({
-            'socket_timeout': 60,
-            'retries': 5,
-            'fragment_retries': 5,
-            'sleep_interval': random.uniform(3, 6),
-            'max_sleep_interval': 10,
+            'socket_timeout': 120,  # Увеличено с 60
+            'retries': 10,          # Увеличено с 5
+            'fragment_retries': 10, # Увеличено с 5
+            'sleep_interval': random.uniform(5, 12),  # Увеличено с 3-6
+            'max_sleep_interval': 20,                 # Увеличено с 10
+            'sleep_interval_requests': random.uniform(2, 5),
+            'sleep_interval_subtitles': random.uniform(1, 3),
         })
         
-        # Дополнительные заголовки для серверов
+        # Специальные заголовки для серверов (имитация мобильного браузера)
         config['http_headers'].update({
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.1 Mobile/15E148 Safari/604.1',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
             'X-Forwarded-For': f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}",
             'X-Real-IP': f"{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}.{random.randint(1,255)}",
+            'X-Requested-With': 'XMLHttpRequest',
+        })
+        
+        # Дополнительные настройки для серверов
+        config.update({
+            'prefer_insecure': True,
+            'no_check_certificate': True,
+            'call_home': False,
+            'no_color': True,
+            'geo_bypass': True,
+            'geo_bypass_country': 'US',
+            'extractor_retries': 5,
         })
     
     return config
