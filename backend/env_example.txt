@@ -1,0 +1,11 @@
+# Telegram Bot Token (получить у @BotFather)
+BOT_TOKEN=8084528706:AAFZE7AtYlwISq2h3ImypLRO2V82vJdpxsU
+
+# Server settings
+HOST=0.0.0.0
+PORT=8000
+
+# Webhook URL (опционально, для production)
+# WEBHOOK_URL=https://yourdomain.com/webhook
+
+# Скопируйте этот файл в .env и заполните реальными значениями 
