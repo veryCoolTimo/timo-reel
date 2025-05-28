@@ -16,7 +16,7 @@ from telegram.ext import (
 )
 from utils.config import BOT_TOKEN, HOST, PORT, WEBHOOK_URL, WEBHOOK_PATH
 from handlers.link_handler import handle_all_messages
-from handlers.pm_commands import mute_command, unmute_command, likes_command, status_command, demo_command
+from handlers.pm_commands import mute_command, unmute_command, likes_command, status_command
 
 # Настройка логирования
 logging.basicConfig(
@@ -136,7 +136,6 @@ def create_application() -> Application:
     application.add_handler(CommandHandler("unmute", unmute_command))
     application.add_handler(CommandHandler("likes", likes_command))
     application.add_handler(CommandHandler("status", status_command))
-    application.add_handler(CommandHandler("demo", demo_command))
     
     # Добавляем обработчик всех текстовых сообщений для поиска ссылок
     application.add_handler(

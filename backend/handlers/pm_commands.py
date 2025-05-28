@@ -4,7 +4,6 @@
 """
 
 import logging
-import os
 from telegram import Update
 from telegram.ext import ContextTypes
 from utils.cache import (
@@ -13,7 +12,6 @@ from utils.cache import (
     update_user_settings,
     is_user_muted
 )
-from utils.config import DEMO_MODE
 
 logger = logging.getLogger(__name__)
 
@@ -114,8 +112,6 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     likes_count = len([r for r in reactions if r['type'] == 'like'])
     comments_count = len([r for r in reactions if r['type'] == 'comment'])
     
-    demo_status = "🎬 Включен" if DEMO_MODE else "🎯 Выключен"
-    
     status_text = f"""
 👤 Ваш статус в TimoReel
 
@@ -129,74 +125,13 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 ⚙️ Настройки:
 🔔 Уведомления: {mute_status}
-🎬 Демо-режим: {demo_status}
 
 📋 Команды:
 /mute - отключить уведомления
 /unmute - включить уведомления  
 /likes - история реакций
-/demo - переключить демо-режим
 """
     
     await update.message.reply_text(status_text)
     
-    logger.info(f"User {user_id} requested status")
-
-async def demo_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Команда /demo - переключить демо-режим"""
-    if update.message.chat.type != 'private':
-        await update.message.reply_text(
-            "❌ Эта команда доступна только в личных сообщениях"
-        )
-        return
-    
-    user_id = update.effective_user.id
-    
-    # Читаем текущее состояние .env файла
-    env_path = os.path.join(os.path.dirname(__file__), '..', '.env')
-    
-    try:
-        # Читаем .env файл
-        env_lines = []
-        demo_found = False
-        
-        if os.path.exists(env_path):
-            with open(env_path, 'r') as f:
-                env_lines = f.readlines()
-        
-        # Ищем строку DEMO_MODE
-        for i, line in enumerate(env_lines):
-            if line.strip().startswith('DEMO_MODE='):
-                current_value = line.strip().split('=')[1].lower()
-                new_value = 'false' if current_value == 'true' else 'true'
-                env_lines[i] = f'DEMO_MODE={new_value}\n'
-                demo_found = True
-                break
-        
-        # Если не нашли, добавляем
-        if not demo_found:
-            env_lines.append('DEMO_MODE=true\n')
-            new_value = 'true'
-        
-        # Записываем обратно
-        with open(env_path, 'w') as f:
-            f.writelines(env_lines)
-        
-        status = "включен" if new_value == 'true' else "выключен"
-        
-        await update.message.reply_text(
-            f"🎬 Демо-режим {status}\n\n"
-            f"ℹ️ Перезапустите бота для применения изменений:\n"
-            f"• Остановите бота (Ctrl+C)\n"
-            f"• Запустите снова: python bot.py\n\n"
-            f"🎯 В демо-режиме бот отправляет заглушки вместо реальных видео"
-        )
-        
-        logger.info(f"User {user_id} toggled demo mode to {new_value}")
-        
-    except Exception as e:
-        logger.error(f"Error toggling demo mode: {e}")
-        await update.message.reply_text(
-            "❌ Ошибка при переключении демо-режима\n\n"
-            "Проверьте права доступа к файлу .env"
-        ) 
+    logger.info(f"User {user_id} requested status") 

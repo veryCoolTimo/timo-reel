@@ -8,7 +8,7 @@ import logging
 import asyncio
 from aiohttp import web
 from utils.config import HOST, PORT
-from handlers.webapp_handler import create_webapp
+from handlers.webapp_handler import create_api_app
 
 # Настройка логирования
 logging.basicConfig(
@@ -17,16 +17,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-async def create_api_app():
-    """Создает API приложение для использования в start_system.py"""
-    return await create_webapp()
-
 async def main():
     """Основная функция запуска API сервера"""
     logger.info("Starting TimoReel API Server...")
     
     # Создаем веб-приложение
-    app = await create_webapp()
+    app = create_api_app()
     
     # Запускаем сервер
     runner = web.AppRunner(app)

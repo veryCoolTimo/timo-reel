@@ -162,19 +162,19 @@ def add_reaction(user_id: int, file_id: str, reaction_type: str):
     save_metadata(data)
     logger.info(f"Added reaction: user {user_id} {reaction_type} video {file_id}")
 
-def get_video_author(file_id: str) -> Optional[Dict[str, Any]]:
+def get_video_author(file_id: str) -> dict:
     """Получает информацию об авторе видео"""
-    data = load_metadata()
+    metadata = load_metadata()
+    videos = metadata.get('videos', {})
     
-    video_info = data["videos"].get(file_id)
-    if video_info:
-        return {
-            "user_id": video_info["user_id"],
-            "username": video_info["username"],
-            "chat_id": video_info["chat_id"]
-        }
+    video_info = videos.get(file_id)
+    if not video_info:
+        return None
     
-    return None
+    return {
+        'user_id': video_info.get('user_id'),
+        'username': video_info.get('username')
+    }
 
 def get_user_reactions(user_id: int) -> List[Dict[str, Any]]:
     """Получает все реакции пользователя"""
@@ -183,56 +183,61 @@ def get_user_reactions(user_id: int) -> List[Dict[str, Any]]:
     
     return data.get("reactions", {}).get(user_id_str, [])
 
-def get_user_settings(user_id: int) -> Dict[str, Any]:
+def get_user_settings(user_id: int) -> dict:
     """Получает настройки пользователя"""
-    data = load_metadata()
-    user_id_str = str(user_id)
-    
-    return data.get("user_settings", {}).get(user_id_str, {})
+    metadata = load_metadata()
+    user_settings = metadata.get('user_settings', {})
+    return user_settings.get(str(user_id), {})
 
-def update_user_settings(user_id: int, settings: Dict[str, Any]):
+def update_user_settings(user_id: int, settings: dict):
     """Обновляет настройки пользователя"""
-    data = load_metadata()
-    user_id_str = str(user_id)
+    metadata = load_metadata()
     
-    if "user_settings" not in data:
-        data["user_settings"] = {}
+    if 'user_settings' not in metadata:
+        metadata['user_settings'] = {}
     
-    if user_id_str not in data["user_settings"]:
-        data["user_settings"][user_id_str] = {}
+    user_key = str(user_id)
+    if user_key not in metadata['user_settings']:
+        metadata['user_settings'][user_key] = {}
     
     # Обновляем настройки
-    data["user_settings"][user_id_str].update(settings)
-    data["user_settings"][user_id_str]["last_updated"] = int(time.time())
+    metadata['user_settings'][user_key].update(settings)
     
-    save_metadata(data)
+    save_metadata(metadata)
     logger.info(f"Updated settings for user {user_id}: {settings}")
 
 def is_user_muted(user_id: int) -> bool:
     """Проверяет, отключены ли уведомления у пользователя"""
     settings = get_user_settings(user_id)
-    return settings.get("muted", False)
+    return settings.get('muted', False)
 
-def get_stats() -> Dict[str, Any]:
-    """Получает общую статистику"""
-    data = load_metadata()
+def get_stats() -> dict:
+    """Получает общую статистику системы"""
+    metadata = load_metadata()
     
-    # Подсчитываем статистику
-    total_videos = len(data.get("videos", {}))
-    all_reactions = []
+    # Считаем статистику
+    total_videos = len(metadata.get('videos', {}))
+    total_reactions = sum(
+        len(reactions) 
+        for reactions in metadata.get('reactions', {}).values()
+    )
+    total_users = len(metadata.get('user_settings', {}))
     
-    for user_reactions in data.get("reactions", {}).values():
-        all_reactions.extend(user_reactions)
+    # Считаем реакции по типам
+    likes_count = 0
+    comments_count = 0
     
-    total_reactions = len(all_reactions)
-    likes_count = len([r for r in all_reactions if r["type"] == "like"])
-    comments_count = len([r for r in all_reactions if r["type"] == "comment"])
+    for user_reactions in metadata.get('reactions', {}).values():
+        for reaction in user_reactions:
+            if reaction.get('type') == 'like':
+                likes_count += 1
+            elif reaction.get('type') == 'comment':
+                comments_count += 1
     
     return {
-        "total_videos": total_videos,
-        "total_reactions": total_reactions,
-        "likes_count": likes_count,
-        "comments_count": comments_count,
-        "total_users": len(data.get("user_settings", {})),
-        "last_updated": data.get("stats", {}).get("last_updated", int(time.time()))
+        'total_videos': total_videos,
+        'total_reactions': total_reactions,
+        'total_users': total_users,
+        'likes_count': likes_count,
+        'comments_count': comments_count
     } 

@@ -6,11 +6,6 @@ from telegram.ext import ContextTypes
 from telegram.constants import ChatAction
 from downloader.video_downloader import downloader
 from utils.cache import add_video_metadata
-from utils.config import DEMO_MODE
-
-# Импортируем демо-обработчик
-if DEMO_MODE:
-    from handlers.demo_handler import handle_demo_download
 
 logger = logging.getLogger(__name__)
 
@@ -102,16 +97,6 @@ async def handle_message_with_links(update: Update, context: ContextTypes.DEFAUL
         processed_urls.add(normalized_url)
         
         try:
-            # Проверяем демо-режим
-            if DEMO_MODE:
-                logger.info(f"Demo mode enabled, using demo handler for {url}")
-                success = await handle_demo_download(update, context, url)
-                if success:
-                    continue
-                else:
-                    # Если демо не сработало, пробуем обычный режим
-                    logger.warning("Demo mode failed, falling back to normal mode")
-            
             # Показываем, что бот печатает
             await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_VIDEO)
             
@@ -131,8 +116,7 @@ async def handle_message_with_links(update: Update, context: ContextTypes.DEFAUL
                         f"💡 Попробуйте:\n"
                         f"• Убедиться, что видео публичное\n"
                         f"• Попробовать другую ссылку\n"
-                        f"• Повторить попытку через несколько минут\n\n"
-                        f"🎬 Для тестирования включите DEMO_MODE=true в .env"
+                        f"• Повторить попытку через несколько минут"
                     )
                 elif 'tiktok.com' in url or 'vm.tiktok.com' in url:
                     error_msg = (
@@ -141,8 +125,7 @@ async def handle_message_with_links(update: Update, context: ContextTypes.DEFAUL
                         f"• Видео приватное или удалено\n"
                         f"• Географические ограничения\n"
                         f"• Временная блокировка TikTok\n\n"
-                        f"💡 Попробуйте другую ссылку или повторите позже\n\n"
-                        f"🎬 Для тестирования включите DEMO_MODE=true в .env"
+                        f"💡 Попробуйте другую ссылку или повторите позже"
                     )
                 else:
                     error_msg = f"❌ Не удалось загрузить видео из {url}\nПопробуйте другую ссылку"
@@ -168,8 +151,7 @@ async def handle_message_with_links(update: Update, context: ContextTypes.DEFAUL
                     f"• Видео не превышает 50MB\n"
                     f"• Ссылка корректная и публичная\n"
                     f"• Видео не удалено автором\n\n"
-                    f"💡 Попробуйте другую ссылку или повторите позже\n\n"
-                    f"🎬 Для тестирования включите DEMO_MODE=true в .env"
+                    f"💡 Попробуйте другую ссылку или повторите позже"
                 )
                 continue
             
@@ -228,8 +210,7 @@ async def handle_message_with_links(update: Update, context: ContextTypes.DEFAUL
                     f"🔧 Попробуйте:\n"
                     f"• Проверить ссылку\n"
                     f"• Повторить попытку\n"
-                    f"• Использовать другую ссылку\n\n"
-                    f"🎬 Для тестирования включите DEMO_MODE=true в .env"
+                    f"• Использовать другую ссылку"
                 )
             
             await message.reply_text(error_msg)

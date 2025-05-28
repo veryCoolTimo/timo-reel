@@ -20,7 +20,4 @@ WEBHOOK_PATH = '/webhook'
 
 # Video settings
 MAX_VIDEO_SIZE = 50 * 1024 * 1024  # 50MB
-MAX_METADATA_ENTRIES = 500  # Максимальное количество записей в metadata.json
-
-# Demo mode settings
-DEMO_MODE = os.getenv('DEMO_MODE', 'false').lower() == 'true' 
+MAX_METADATA_ENTRIES = 500  # Максимальное количество записей в metadata.json 
