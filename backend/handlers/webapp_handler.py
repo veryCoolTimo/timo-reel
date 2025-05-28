@@ -191,20 +191,22 @@ def create_api_app() -> web.Application:
     app = web.Application()
     
     # Настройка CORS
-    async def cors_handler(request: web_request.Request, handler):
-        if request.method == 'OPTIONS':
-            # Preflight запрос
-            response = web.Response()
-        else:
-            response = await handler(request)
-        
-        # Добавляем CORS заголовки
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-        response.headers['Access-Control-Max-Age'] = '86400'
-        
-        return response
+    async def cors_handler(app, handler):
+        async def middleware_handler(request):
+            if request.method == 'OPTIONS':
+                # Preflight запрос
+                response = web.Response()
+            else:
+                response = await handler(request)
+            
+            # Добавляем CORS заголовки
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+            response.headers['Access-Control-Max-Age'] = '86400'
+            
+            return response
+        return middleware_handler
     
     # Добавляем CORS middleware
     app.middlewares.append(cors_handler)

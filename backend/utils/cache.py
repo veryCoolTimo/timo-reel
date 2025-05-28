@@ -211,6 +211,12 @@ def is_user_muted(user_id: int) -> bool:
     settings = get_user_settings(user_id)
     return settings.get('muted', False)
 
+def set_user_mute_status(user_id: int, muted: bool):
+    """Устанавливает статус уведомлений для пользователя"""
+    settings = {'muted': muted}
+    update_user_settings(user_id, settings)
+    logger.info(f"Set mute status for user {user_id}: {muted}")
+
 def get_stats() -> dict:
     """Получает общую статистику системы"""
     metadata = load_metadata()

@@ -48,6 +48,29 @@ echo "BOT_TOKEN=your_bot_token_here" > .env
 
 ## 🚀 Запуск
 
+### Фоновый режим (рекомендуется)
+
+**Запуск всех компонентов в фоне:**
+```bash
+cd backend
+source venv/bin/activate
+python run_background.py start
+```
+
+**Управление фоновыми процессами:**
+```bash
+python run_background.py status    # Проверить статус
+python run_background.py stop      # Остановить все
+python run_background.py restart   # Перезапустить все
+```
+
+**Просмотр логов:**
+```bash
+tail -f logs/bot.log logs/api.log
+```
+
+### Ручной запуск
+
 **Все компоненты сразу:**
 ```bash
 cd backend
@@ -89,6 +112,31 @@ cd webapp && npm run dev
 - `/status` - Статус пользователя
 - `/mute` / `/unmute` - Управление уведомлениями
 - `/likes` - История реакций
+
+## 🐛 Решение проблем
+
+### "Address already in use"
+```bash
+# Найти процессы на портах
+lsof -i :8000
+lsof -i :8001
+# Остановить по PID
+kill -9 <PID>
+```
+
+### "terser not found" при сборке
+```bash
+cd webapp
+npm install terser --save-dev
+npm run build
+```
+
+### Проблемы с импортом
+```bash
+cd backend
+source venv/bin/activate
+pip install --upgrade -r requirements.txt
+```
 
 ## 📞 Поддержка
 
