@@ -108,3 +108,4 @@ python bot.py
 ## Лицензия
 
 MIT
+# timo-reel
