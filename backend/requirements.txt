@@ -1,5 +1,12 @@
+# Telegram Bot
 python-telegram-bot==20.7
+
+# Video downloading
 yt-dlp==2023.12.30
+
+# HTTP requests and API server
 requests==2.31.0
 aiohttp==3.9.1
+
+# Environment variables
 python-dotenv==1.0.0 

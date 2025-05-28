@@ -1,112 +1,180 @@
 import json
 import os
-from datetime import datetime
-from typing import Dict, List, Any
-from .config import METADATA_FILE, STORAGE_PATH, MAX_METADATA_ENTRIES
+import time
+import logging
+from typing import Dict, Any, List, Optional
+
+logger = logging.getLogger(__name__)
+
+# Путь к файлу метаданных
+METADATA_FILE = os.path.join(os.path.dirname(__file__), '..', 'storage', 'metadata.json')
+
+# Максимальное количество записей (для ограничения размера файла)
+MAX_VIDEOS = 500
+MAX_REACTIONS_PER_USER = 100
 
 def ensure_storage_dir():
-    """Создает директорию storage если она не существует"""
-    os.makedirs(STORAGE_PATH, exist_ok=True)
+    """Создает директорию storage если её нет"""
+    storage_dir = os.path.dirname(METADATA_FILE)
+    if not os.path.exists(storage_dir):
+        os.makedirs(storage_dir)
 
 def load_metadata() -> Dict[str, Any]:
     """Загружает метаданные из JSON файла"""
     ensure_storage_dir()
     
     if not os.path.exists(METADATA_FILE):
-        return {"videos": {}, "reactions": {}, "user_settings": {}}
+        # Создаем пустой файл с базовой структурой
+        default_data = {
+            "videos": {},
+            "reactions": {},
+            "user_settings": {}
+        }
+        save_metadata(default_data)
+        return default_data
     
     try:
         with open(METADATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError):
+    except (json.JSONDecodeError, FileNotFoundError) as e:
+        logger.error(f"Error loading metadata: {e}")
         return {"videos": {}, "reactions": {}, "user_settings": {}}
 
 def save_metadata(data: Dict[str, Any]):
     """Сохраняет метаданные в JSON файл"""
     ensure_storage_dir()
     
-    # Ограничиваем количество записей
-    if "videos" in data and len(data["videos"]) > MAX_METADATA_ENTRIES:
-        # Сортируем по timestamp и оставляем только последние записи
-        sorted_videos = sorted(
-            data["videos"].items(),
-            key=lambda x: x[1].get("timestamp", 0),
-            reverse=True
-        )
-        data["videos"] = dict(sorted_videos[:MAX_METADATA_ENTRIES])
-    
-    with open(METADATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+    try:
+        with open(METADATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logger.error(f"Error saving metadata: {e}")
 
-def add_video_metadata(file_id: str, chat_id: int, user_id: int, username: str = None):
+def add_video_metadata(file_id: str, chat_id: int, user_id: int, username: str):
     """Добавляет метаданные нового видео"""
-    data = load_metadata()
+    metadata = load_metadata()
     
-    data["videos"][file_id] = {
+    # Добавляем информацию о видео
+    metadata["videos"][file_id] = {
         "chat_id": chat_id,
         "user_id": user_id,
         "username": username,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": int(time.time())
     }
     
-    save_metadata(data)
+    # Ограничиваем количество видео
+    videos = metadata["videos"]
+    if len(videos) > MAX_VIDEOS:
+        # Удаляем самые старые видео
+        sorted_videos = sorted(
+            videos.items(), 
+            key=lambda x: x[1].get("timestamp", 0)
+        )
+        
+        # Оставляем только последние MAX_VIDEOS
+        videos_to_keep = dict(sorted_videos[-MAX_VIDEOS:])
+        metadata["videos"] = videos_to_keep
+        
+        logger.info(f"Trimmed videos to {MAX_VIDEOS} entries")
+    
+    save_metadata(metadata)
+    logger.info(f"Added video metadata: {file_id}")
 
 def get_videos_for_chat(chat_id: int) -> List[Dict[str, Any]]:
-    """Получает все видео для определенного чата"""
-    data = load_metadata()
-    videos = []
+    """Получает все видео для указанного чата"""
+    metadata = load_metadata()
+    videos = metadata.get("videos", {})
     
-    for file_id, metadata in data["videos"].items():
-        if metadata["chat_id"] == chat_id:
-            videos.append({
-                "file_id": file_id,
-                **metadata
-            })
+    # Фильтруем видео по chat_id
+    chat_videos = []
+    for file_id, video_info in videos.items():
+        if video_info.get("chat_id") == chat_id:
+            video_data = video_info.copy()
+            video_data["file_id"] = file_id
+            chat_videos.append(video_data)
     
     # Сортируем по времени (новые сначала)
-    videos.sort(key=lambda x: x["timestamp"], reverse=True)
-    return videos
+    chat_videos.sort(key=lambda x: x.get("timestamp", 0), reverse=True)
+    
+    return chat_videos
 
 def add_reaction(user_id: int, file_id: str, reaction_type: str):
     """Добавляет реакцию пользователя"""
-    data = load_metadata()
+    metadata = load_metadata()
     
-    if "reactions" not in data:
-        data["reactions"] = {}
+    # Инициализируем структуру реакций если нужно
+    if "reactions" not in metadata:
+        metadata["reactions"] = {}
     
-    if str(user_id) not in data["reactions"]:
-        data["reactions"][str(user_id)] = []
+    user_id_str = str(user_id)
+    if user_id_str not in metadata["reactions"]:
+        metadata["reactions"][user_id_str] = []
     
+    # Добавляем новую реакцию
     reaction = {
         "file_id": file_id,
         "type": reaction_type,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": int(time.time())
     }
     
-    data["reactions"][str(user_id)].append(reaction)
-    save_metadata(data)
+    metadata["reactions"][user_id_str].append(reaction)
+    
+    # Ограничиваем количество реакций на пользователя
+    user_reactions = metadata["reactions"][user_id_str]
+    if len(user_reactions) > MAX_REACTIONS_PER_USER:
+        # Оставляем только последние реакции
+        metadata["reactions"][user_id_str] = user_reactions[-MAX_REACTIONS_PER_USER:]
+        logger.info(f"Trimmed reactions for user {user_id} to {MAX_REACTIONS_PER_USER}")
+    
+    save_metadata(metadata)
+    logger.info(f"Added reaction: user {user_id}, file {file_id}, type {reaction_type}")
 
 def get_user_reactions(user_id: int) -> List[Dict[str, Any]]:
     """Получает все реакции пользователя"""
-    data = load_metadata()
-    return data.get("reactions", {}).get(str(user_id), [])
+    metadata = load_metadata()
+    reactions = metadata.get("reactions", {})
+    
+    user_id_str = str(user_id)
+    return reactions.get(user_id_str, [])
 
 def set_user_mute_status(user_id: int, is_muted: bool):
-    """Устанавливает статус mute для пользователя"""
-    data = load_metadata()
+    """Устанавливает статус уведомлений для пользователя"""
+    metadata = load_metadata()
     
-    if "user_settings" not in data:
-        data["user_settings"] = {}
+    if "user_settings" not in metadata:
+        metadata["user_settings"] = {}
     
-    data["user_settings"][str(user_id)] = {
-        "muted": is_muted,
-        "updated": datetime.now().isoformat()
-    }
+    user_id_str = str(user_id)
+    if user_id_str not in metadata["user_settings"]:
+        metadata["user_settings"][user_id_str] = {}
     
-    save_metadata(data)
+    metadata["user_settings"][user_id_str]["muted"] = is_muted
+    metadata["user_settings"][user_id_str]["updated"] = int(time.time())
+    
+    save_metadata(metadata)
+    logger.info(f"User {user_id} mute status set to {is_muted}")
 
 def is_user_muted(user_id: int) -> bool:
-    """Проверяет, заглушен ли пользователь"""
-    data = load_metadata()
-    user_settings = data.get("user_settings", {}).get(str(user_id), {})
-    return user_settings.get("muted", False) 
+    """Проверяет, отключены ли уведомления у пользователя"""
+    metadata = load_metadata()
+    user_settings = metadata.get("user_settings", {})
+    
+    user_id_str = str(user_id)
+    user_data = user_settings.get(user_id_str, {})
+    
+    return user_data.get("muted", False)
+
+def get_video_author(file_id: str) -> Optional[Dict[str, Any]]:
+    """Получает информацию об авторе видео"""
+    metadata = load_metadata()
+    videos = metadata.get("videos", {})
+    
+    video_info = videos.get(file_id)
+    if video_info:
+        return {
+            "user_id": video_info.get("user_id"),
+            "username": video_info.get("username"),
+            "chat_id": video_info.get("chat_id")
+        }
+    
+    return None 
