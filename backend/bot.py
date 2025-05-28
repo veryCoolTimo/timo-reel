@@ -16,7 +16,7 @@ from telegram.ext import (
 )
 from utils.config import BOT_TOKEN, HOST, PORT, WEBHOOK_URL, WEBHOOK_PATH
 from handlers.link_handler import handle_all_messages
-from handlers.pm_commands import mute_command, unmute_command, likes_command, status_command
+from handlers.pm_commands import mute_command, unmute_command, likes_command, status_command, demo_command
 
 # Настройка логирования
 logging.basicConfig(
@@ -65,6 +65,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 Поддерживаемые платформы: Instagram, TikTok
 Используйте /help для подробной информации.
+
+✨ Попробуйте отправить ссылку прямо сейчас!
 """
     
     await update.message.reply_text(welcome_text)
@@ -134,6 +136,7 @@ def create_application() -> Application:
     application.add_handler(CommandHandler("unmute", unmute_command))
     application.add_handler(CommandHandler("likes", likes_command))
     application.add_handler(CommandHandler("status", status_command))
+    application.add_handler(CommandHandler("demo", demo_command))
     
     # Добавляем обработчик всех текстовых сообщений для поиска ссылок
     application.add_handler(
@@ -164,10 +167,19 @@ async def main():
     else:
         # Запуск с polling (для разработки)
         logger.info("Starting polling...")
-        await application.run_polling(
-            allowed_updates=Update.ALL_TYPES,
-            drop_pending_updates=True
-        )
+        async with application:
+            await application.start()
+            await application.updater.start_polling(drop_pending_updates=True)
+            
+            # Ждем сигнала остановки
+            try:
+                while True:
+                    await asyncio.sleep(1)
+            except KeyboardInterrupt:
+                logger.info("Bot stopped by user")
+            finally:
+                await application.updater.stop()
+                await application.stop()
 
 if __name__ == '__main__':
     try:

@@ -1,10 +1,16 @@
 import re
 import logging
+from urllib.parse import urlparse, parse_qs
 from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.constants import ChatAction
 from downloader.video_downloader import downloader
 from utils.cache import add_video_metadata
+from utils.config import DEMO_MODE
+
+# Импортируем демо-обработчик
+if DEMO_MODE:
+    from handlers.demo_handler import handle_demo_download
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +26,34 @@ URL_PATTERNS = [
     r'https?://(?:www\.)?tiktok\.com/t/([A-Za-z0-9]+)/?',
 ]
 
+def normalize_url(url: str) -> str:
+    """Нормализует URL, убирая параметры запроса и лишние символы"""
+    try:
+        parsed = urlparse(url)
+        # Убираем параметры запроса и фрагменты
+        normalized = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        # Убираем завершающий слеш если он есть
+        if normalized.endswith('/'):
+            normalized = normalized[:-1]
+        return normalized
+    except:
+        return url
+
 def extract_urls_from_text(text: str) -> list[str]:
-    """Извлекает все поддерживаемые URL из текста"""
+    """Извлекает все поддерживаемые URL из текста с дедупликацией"""
     urls = []
+    normalized_urls = set()  # Для отслеживания уже найденных URL
     
     for pattern in URL_PATTERNS:
         matches = re.finditer(pattern, text, re.IGNORECASE)
         for match in matches:
-            urls.append(match.group(0))
+            url = match.group(0)
+            normalized = normalize_url(url)
+            
+            # Добавляем только если еще не встречали такой URL
+            if normalized not in normalized_urls:
+                urls.append(url)
+                normalized_urls.add(normalized)
     
     # Также ищем любые URL, содержащие поддерживаемые домены
     general_url_pattern = r'https?://[^\s]+'
@@ -35,8 +61,12 @@ def extract_urls_from_text(text: str) -> list[str]:
     
     for match in general_matches:
         url = match.group(0)
-        if downloader.is_supported_url(url) and url not in urls:
+        normalized = normalize_url(url)
+        
+        if (downloader.is_supported_url(url) and 
+            normalized not in normalized_urls):
             urls.append(url)
+            normalized_urls.add(normalized)
     
     return urls
 
@@ -50,16 +80,38 @@ async def handle_message_with_links(update: Update, context: ContextTypes.DEFAUL
     user_id = message.from_user.id
     username = message.from_user.username or message.from_user.first_name
     
-    # Извлекаем URL из сообщения
+    # Извлекаем URL из сообщения с дедупликацией
     urls = extract_urls_from_text(message.text)
     
     if not urls:
         return
     
-    logger.info(f"Found {len(urls)} video URLs in message from user {user_id}")
+    logger.info(f"Found {len(urls)} unique video URLs in message from user {user_id}")
+    
+    # Дополнительная проверка на дубликаты по нормализованным URL
+    processed_urls = set()
     
     for url in urls:
+        normalized_url = normalize_url(url)
+        
+        # Пропускаем если уже обрабатывали такой URL
+        if normalized_url in processed_urls:
+            logger.info(f"Skipping duplicate URL: {url}")
+            continue
+        
+        processed_urls.add(normalized_url)
+        
         try:
+            # Проверяем демо-режим
+            if DEMO_MODE:
+                logger.info(f"Demo mode enabled, using demo handler for {url}")
+                success = await handle_demo_download(update, context, url)
+                if success:
+                    continue
+                else:
+                    # Если демо не сработало, пробуем обычный режим
+                    logger.warning("Demo mode failed, falling back to normal mode")
+            
             # Показываем, что бот печатает
             await context.bot.send_chat_action(chat_id=chat_id, action=ChatAction.UPLOAD_VIDEO)
             
@@ -67,28 +119,76 @@ async def handle_message_with_links(update: Update, context: ContextTypes.DEFAUL
             video_info = downloader.extract_info(url)
             if not video_info:
                 logger.warning(f"Could not extract info from URL: {url}")
+                
+                # Определяем тип ошибки по платформе
+                if 'instagram.com' in url:
+                    error_msg = (
+                        f"❌ Не удалось загрузить видео из Instagram\n\n"
+                        f"🔒 Возможные причины:\n"
+                        f"• Видео приватное или удалено\n"
+                        f"• Instagram блокирует автоматические запросы\n"
+                        f"• Аккаунт заблокирован или требует входа\n\n"
+                        f"💡 Попробуйте:\n"
+                        f"• Убедиться, что видео публичное\n"
+                        f"• Попробовать другую ссылку\n"
+                        f"• Повторить попытку через несколько минут\n\n"
+                        f"🎬 Для тестирования включите DEMO_MODE=true в .env"
+                    )
+                elif 'tiktok.com' in url or 'vm.tiktok.com' in url:
+                    error_msg = (
+                        f"❌ Не удалось загрузить видео из TikTok\n\n"
+                        f"🔒 Возможные причины:\n"
+                        f"• Видео приватное или удалено\n"
+                        f"• Географические ограничения\n"
+                        f"• Временная блокировка TikTok\n\n"
+                        f"💡 Попробуйте другую ссылку или повторите позже\n\n"
+                        f"🎬 Для тестирования включите DEMO_MODE=true в .env"
+                    )
+                else:
+                    error_msg = f"❌ Не удалось загрузить видео из {url}\nПопробуйте другую ссылку"
+                
+                await message.reply_text(error_msg)
                 continue
             
             logger.info(f"Downloading video: {video_info['title']} from {url}")
             
+            # Отправляем сообщение о начале загрузки
+            status_message = await message.reply_text(
+                f"⬇️ Загружаю видео...\n"
+                f"📹 {video_info['title'][:50]}{'...' if len(video_info['title']) > 50 else ''}\n"
+                f"👤 {video_info['uploader']}"
+            )
+            
             # Загружаем видео
             video_path = downloader.download_video(url)
             if not video_path:
-                await message.reply_text(
-                    f"❌ Не удалось загрузить видео из {url}\n"
-                    f"Возможно, видео слишком большое или недоступно."
+                await status_message.edit_text(
+                    f"❌ Не удалось загрузить видео\n\n"
+                    f"🔍 Проверьте:\n"
+                    f"• Видео не превышает 50MB\n"
+                    f"• Ссылка корректная и публичная\n"
+                    f"• Видео не удалено автором\n\n"
+                    f"💡 Попробуйте другую ссылку или повторите позже\n\n"
+                    f"🎬 Для тестирования включите DEMO_MODE=true в .env"
                 )
                 continue
             
             try:
+                # Обновляем статус
+                await status_message.edit_text("📤 Отправляю видео...")
+                
                 # Отправляем видео в чат
                 with open(video_path, 'rb') as video_file:
                     sent_message = await context.bot.send_video(
                         chat_id=chat_id,
                         video=video_file,
                         caption=f"🎬 {video_info['title']}\n👤 @{username}",
-                        reply_to_message_id=message.message_id
+                        reply_to_message_id=message.message_id,
+                        supports_streaming=True
                     )
+                
+                # Удаляем статусное сообщение
+                await status_message.delete()
                 
                 # Сохраняем метаданные
                 if sent_message.video:
@@ -107,9 +207,32 @@ async def handle_message_with_links(update: Update, context: ContextTypes.DEFAUL
                 
         except Exception as e:
             logger.error(f"Error processing URL {url}: {e}")
-            await message.reply_text(
-                f"❌ Произошла ошибка при обработке видео из {url}"
-            )
+            
+            # Определяем тип ошибки для пользователя
+            if "File too large" in str(e) or "too large" in str(e).lower():
+                error_msg = (
+                    f"❌ Видео слишком большое (>50MB)\n\n"
+                    f"📏 Ограничения Telegram:\n"
+                    f"• Максимальный размер: 50MB\n"
+                    f"• Попробуйте найти видео меньшего размера"
+                )
+            elif "Network" in str(e) or "timeout" in str(e).lower():
+                error_msg = (
+                    f"❌ Проблема с сетью\n\n"
+                    f"🌐 Проверьте подключение к интернету\n"
+                    f"🔄 Попробуйте еще раз через минуту"
+                )
+            else:
+                error_msg = (
+                    f"❌ Произошла ошибка при обработке видео\n\n"
+                    f"🔧 Попробуйте:\n"
+                    f"• Проверить ссылку\n"
+                    f"• Повторить попытку\n"
+                    f"• Использовать другую ссылку\n\n"
+                    f"🎬 Для тестирования включите DEMO_MODE=true в .env"
+                )
+            
+            await message.reply_text(error_msg)
 
 async def handle_all_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработчик всех текстовых сообщений для поиска ссылок"""

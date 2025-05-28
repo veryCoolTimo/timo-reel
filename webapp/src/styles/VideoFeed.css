@@ -1,0 +1,153 @@
+.video-feed {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow: hidden;
+}
+
+.video-container {
+  height: 100vh;
+  width: 100vw;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.video-item {
+  height: 100vh;
+  width: 100vw;
+  scroll-snap-align: start;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Навигационные кнопки */
+.navigation-controls {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nav-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-dark);
+}
+
+.nav-button:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.nav-button:active {
+  transform: scale(0.95);
+}
+
+.nav-previous {
+  margin-bottom: 10px;
+}
+
+.nav-next {
+  margin-top: 10px;
+}
+
+/* Индикатор позиции */
+.position-indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-dark);
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+  .navigation-controls {
+    right: 15px;
+  }
+  
+  .nav-button {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+  
+  .position-indicator {
+    top: 15px;
+    right: 15px;
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navigation-controls {
+    right: 10px;
+  }
+  
+  .nav-button {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  
+  .position-indicator {
+    top: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+}
+
+/* Анимации для навигации */
+@keyframes navButtonAppear {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.nav-button {
+  animation: navButtonAppear 0.3s ease-out;
+}
+
+/* Скрытие скроллбара для мобильных устройств */
+.video-container::-webkit-scrollbar {
+  display: none;
+}
+
+.video-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+} 

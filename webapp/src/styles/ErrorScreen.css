@@ -1,0 +1,124 @@
+.error-screen {
+  height: 100vh;
+  width: 100vw;
+  background: var(--gradient-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.error-content {
+  text-align: center;
+  max-width: 400px;
+  padding: 0 20px;
+  animation: fadeIn 0.8s ease-out;
+}
+
+.error-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  animation: float 3s ease-in-out infinite;
+}
+
+.error-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 15px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.error-message {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0 0 30px 0;
+  line-height: 1.5;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.retry-button {
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: 25px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-dark);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 0, 80, 0.3);
+}
+
+.retry-button:active {
+  transform: translateY(0);
+}
+
+/* Фоновые эффекты */
+.error-screen::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(
+    circle,
+    rgba(255, 0, 80, 0.1) 0%,
+    transparent 70%
+  );
+  transform: translate(-50%, -50%);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+  .error-icon {
+    font-size: 70px;
+  }
+  
+  .error-title {
+    font-size: 22px;
+  }
+  
+  .error-message {
+    font-size: 15px;
+  }
+  
+  .retry-button {
+    padding: 10px 20px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .error-content {
+    padding: 0 15px;
+  }
+  
+  .error-icon {
+    font-size: 60px;
+  }
+  
+  .error-title {
+    font-size: 20px;
+  }
+  
+  .error-message {
+    font-size: 14px;
+  }
+  
+  .retry-button {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+} 

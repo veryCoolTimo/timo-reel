@@ -17,6 +17,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+async def create_api_app():
+    """Создает API приложение для использования в start_system.py"""
+    return await create_webapp()
+
 async def main():
     """Основная функция запуска API сервера"""
     logger.info("Starting TimoReel API Server...")

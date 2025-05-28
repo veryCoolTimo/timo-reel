@@ -212,10 +212,20 @@ async def health_check(request: web.Request) -> Response:
 @web.middleware
 async def cors_middleware(request, handler):
     """CORS middleware для разработки"""
+    # Обрабатываем preflight OPTIONS запросы
+    if request.method == 'OPTIONS':
+        response = web.Response()
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        response.headers['Access-Control-Max-Age'] = '86400'
+        return response
+    
+    # Обрабатываем обычные запросы
     response = await handler(request)
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     return response
 
 def setup_routes(app: web.Application):
@@ -226,6 +236,13 @@ def setup_routes(app: web.Application):
     app.router.add_get('/api/video/{file_id}', get_video_info)
     app.router.add_get('/api/stats', get_stats)
     app.router.add_get('/api/health', health_check)
+    
+    # Добавляем OPTIONS для всех маршрутов
+    app.router.add_options('/api/feed', lambda r: web.Response())
+    app.router.add_options('/api/react', lambda r: web.Response())
+    app.router.add_options('/api/video/{file_id}', lambda r: web.Response())
+    app.router.add_options('/api/stats', lambda r: web.Response())
+    app.router.add_options('/api/health', lambda r: web.Response())
     
     # Добавляем CORS middleware
     app.middlewares.append(cors_middleware)

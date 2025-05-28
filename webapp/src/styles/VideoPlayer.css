@@ -1,0 +1,257 @@
+.video-player {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-bg);
+}
+
+.video-wrapper {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.video-element {
+  height: 100vh;
+  width: 100vw;
+  object-fit: cover;
+  background: var(--primary-bg);
+}
+
+/* Градиентный оверлей */
+.video-gradient {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    transparent 20%,
+    transparent 80%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Индикатор воспроизведения */
+.play-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.play-button {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--primary-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: var(--shadow-light);
+  backdrop-filter: blur(10px);
+  animation: pulse 2s infinite;
+}
+
+/* Контролы звука */
+.audio-controls {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 20;
+}
+
+.mute-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-dark);
+}
+
+.mute-button:hover {
+  background: rgba(0, 0, 0, 0.8);
+  transform: scale(1.1);
+}
+
+.mute-button:active {
+  transform: scale(0.95);
+}
+
+.mute-button.muted {
+  background: rgba(255, 0, 80, 0.6);
+}
+
+.mute-button.unmuted {
+  background: rgba(0, 245, 255, 0.6);
+}
+
+/* Дополнительные контролы */
+.video-controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.controls-overlay {
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  max-width: 300px;
+  width: 90%;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-light);
+}
+
+.close-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.close-controls:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.video-info {
+  margin-top: 20px;
+}
+
+.video-info p {
+  margin: 5px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.video-info p:first-child {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+  .play-button {
+    width: 70px;
+    height: 70px;
+    font-size: 20px;
+  }
+  
+  .audio-controls {
+    top: 15px;
+    left: 15px;
+  }
+  
+  .mute-button {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
+  
+  .controls-overlay {
+    padding: 15px;
+    max-width: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .play-button {
+    width: 60px;
+    height: 60px;
+    font-size: 18px;
+  }
+  
+  .audio-controls {
+    top: 10px;
+    left: 10px;
+  }
+  
+  .mute-button {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+  
+  .controls-overlay {
+    padding: 12px;
+    max-width: 260px;
+  }
+  
+  .video-info p {
+    font-size: 12px;
+  }
+  
+  .video-info p:first-child {
+    font-size: 14px;
+  }
+}
+
+/* Анимации для видео */
+@keyframes videoAppear {
+  from {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.video-element {
+  animation: videoAppear 0.5s ease-out;
+}
+
+/* Эффекты при загрузке */
+.video-element[data-loading="true"] {
+  filter: blur(5px);
+  transition: filter 0.3s ease;
+}
+
+.video-element[data-loading="false"] {
+  filter: blur(0);
+} 

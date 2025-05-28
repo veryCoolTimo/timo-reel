@@ -1,0 +1,312 @@
+.reaction-buttons {
+  position: absolute;
+  right: 20px;
+  bottom: 100px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.reaction-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+}
+
+.reaction-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.reaction-button:hover {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.reaction-button:active {
+  transform: scale(0.95);
+}
+
+.reaction-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reaction-button:disabled:hover {
+  transform: none;
+}
+
+/* Специфичные стили для кнопок */
+.like-button {
+  border-color: rgba(255, 0, 80, 0.5);
+}
+
+.like-button:hover {
+  background: var(--gradient-primary);
+  border-color: rgba(255, 0, 80, 0.8);
+  box-shadow: 0 0 20px rgba(255, 0, 80, 0.3);
+}
+
+.like-button.pressed {
+  background: var(--gradient-primary);
+  transform: scale(1.2);
+  animation: heartBeat 0.3s ease-out;
+}
+
+.comment-button {
+  border-color: rgba(0, 245, 255, 0.5);
+}
+
+.comment-button:hover {
+  background: var(--gradient-secondary);
+  border-color: rgba(0, 245, 255, 0.8);
+  box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+}
+
+.comment-button.pressed {
+  background: var(--gradient-secondary);
+  transform: scale(1.2);
+  animation: commentPulse 0.3s ease-out;
+}
+
+.share-button {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.share-button:hover {
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 20px rgba(106, 17, 203, 0.3);
+}
+
+/* Иконки кнопок */
+.button-icon {
+  font-size: 24px;
+  margin-bottom: 2px;
+  transition: var(--transition);
+}
+
+.button-label {
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+
+.heart-icon {
+  transition: var(--transition);
+}
+
+.like-button.pressed .heart-icon {
+  animation: heartBounce 0.6s ease-out;
+}
+
+.comment-icon {
+  transition: var(--transition);
+}
+
+.comment-button.pressed .comment-icon {
+  animation: commentShake 0.4s ease-out;
+}
+
+.share-icon {
+  transition: var(--transition);
+}
+
+/* Анимированные эффекты */
+.reaction-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+
+.like-effect {
+  animation: effectFadeOut 1s ease-out forwards;
+}
+
+.comment-effect {
+  animation: effectFadeOut 0.8s ease-out forwards;
+}
+
+.floating-heart {
+  position: absolute;
+  font-size: 20px;
+  animation: floatUp 1s ease-out forwards;
+  right: 30px;
+  bottom: 30px;
+}
+
+.floating-heart:nth-child(1) {
+  animation-delay: 0s;
+  right: 25px;
+}
+
+.floating-heart:nth-child(2) {
+  animation-delay: 0.1s;
+  right: 35px;
+}
+
+.floating-heart:nth-child(3) {
+  animation-delay: 0.2s;
+  right: 30px;
+}
+
+.floating-comment {
+  position: absolute;
+  font-size: 18px;
+  animation: floatUpComment 0.8s ease-out forwards;
+  right: 30px;
+  bottom: 30px;
+}
+
+/* Анимации */
+@keyframes heartBeat {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  75% {
+    transform: scale(1.25);
+  }
+}
+
+@keyframes commentPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+@keyframes heartBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.2) rotate(-5deg);
+  }
+  50% {
+    transform: scale(1.3) rotate(5deg);
+  }
+  75% {
+    transform: scale(1.1) rotate(-2deg);
+  }
+}
+
+@keyframes commentShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px) rotate(-5deg);
+  }
+  50% {
+    transform: translateX(3px) rotate(5deg);
+  }
+  75% {
+    transform: translateX(-2px) rotate(-2deg);
+  }
+}
+
+@keyframes floatUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) scale(1.5);
+  }
+}
+
+@keyframes floatUpComment {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-80px) scale(1.3) rotate(15deg);
+  }
+}
+
+@keyframes effectFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Мобильная адаптация */
+@media (max-width: 768px) {
+  .reaction-buttons {
+    right: 15px;
+    bottom: 80px;
+  }
+  
+  .reaction-button {
+    width: 55px;
+    height: 55px;
+  }
+  
+  .button-icon {
+    font-size: 22px;
+  }
+  
+  .button-label {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .reaction-buttons {
+    right: 10px;
+    bottom: 60px;
+  }
+  
+  .reaction-button {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .button-icon {
+    font-size: 20px;
+  }
+  
+  .button-label {
+    font-size: 8px;
+  }
+  
+  .reaction-column {
+    gap: 12px;
+  }
+} 
