@@ -20,6 +20,13 @@ webapp/.env.production.local
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+backend/logs/
+backend/logs/*.log
+
+# Instagram cookies and errors (sensitive data)
+backend/cookies/
+backend/cookies/*.txt
+backend/logs/instagram_errors.log
 
 # Runtime data
 pids
@@ -43,3 +50,5 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp 
+
+docs/
